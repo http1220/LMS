@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zoom">
+
+    <select id="authority" parameterType="ZoomDTO" resultType="ZoomDTO">
+        SELECT ZOOM_AUTH
+        FROM INSTR_INFO
+        WHERE USER_NO = #{user_no}
+    </select>
+
+    <update id="join_url">
+        UPDATE LECT_MEET_INFO
+        SET JOIN_URL = #{join_url}
+        WHERE SBJCT_NO = #{sbjct_no}
+    </update>
+
+    <select id="student_list" parameterType="ZoomDTO" resultType="ZoomDTO">
+        SELECT APPL_NO, USER_ID, KORN_FLNM
+        FROM SBJCT_STUDENT
+        WHERE SBJCT_NO = #{sbjct_no}
+    </select>
+
+    <select id="student_lists" parameterType="ZoomDTO" resultType="HashMap">
+        SELECT APPL_NO, USER_ID, KORN_FLNM, TELNO, EML_ADDR
+        FROM SBJCT_STUDENT
+        WHERE SBJCT_NO = #{sbjct_no}
+    </select>
+
+
+    <select id="user_no" parameterType="ZoomDTO" resultType="ZoomDTO">
+        SELECT USER_NO
+        FROM APPL_INFO
+        WHERE APPL_NO = #{appl_no}
+    </select>
+
+    <insert id="student_msg">
+        INSERT INTO message
+        SET
+        post_user_id = #{login_id},
+        message_title = '00강사님 수업 시작',
+        message_content = 'zoom 수업 입장 바랍니다.',
+        read_or_not = 0,
+        get_user_id = #{user_id}
+    </insert>
+
+    <update id="zoom_exit">
+        UPDATE LECT_MEET_INFO
+        SET JOIN_URL = NULL
+        WHERE SBJCT_NO = #{sbjct_no}
+    </update>
+
+    <select id="zoom_join" parameterType="ZoomDTO" resultType="ZoomDTO">
+        SELECT JOIN_URL
+        FROM LECT_MEET_INFO
+        WHERE SBJCT_NO = #{sbjct_no}
+    </select>
+
+    <update id="attendance_check">
+        UPDATE LECT_MEET_MAG
+        SET
+        ATTEND_STATUS = '1'
+        WHERE APPL_NO = #{attendance}
+        AND SBJCT_NO = #{sbjct_no}
+    </update>
+
+    <update id="absence_check">
+        UPDATE LECT_MEET_MAG
+        SET
+        ATTEND_STATUS = NULL
+        WHERE APPL_NO = #{absence}
+        AND SBJCT_NO = #{sbjct_no}
+    </update>
+
+<!--
+    <delete id="final_delete_check">
+        DELETE ATND
+        FROM LECT_MEET_MAG MAG
+        JOIN APPL_ATND ATND ON MAG.APPL_NO = ATND.APPL_NO
+        WHERE MAG.ATTEND_STATUS IS NULL
+        AND MAG.SBJCT_NO = #{sbjct_no}
+        AND ATND.SBJCT_MTHD_CD = 2
+    </delete>
+-->
+
+    <select id="final_check_list" parameterType="HashMap" resultType="HashMap">
+        SELECT LECT_YMD, SBJCT_NO, CRCLM_CD, CRCLM_CYCL, APPL_NO, ATTEND_STATUS
+        FROM LECT_MEET_MAG
+        WHERE SBJCT_NO = #{sbjct_no}
+        AND ATTEND_STATUS = '1'
+    </select>
+
+    <insert id="final_check" parameterType="List">
+        INSERT INTO APPL_ATND (APPL_NO, LECT_YMD, CRCLM_CYCL, ATND_CD, CRCLM_CD, SBJCT_NO, SBJCT_MTHD_CD)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.APPL_NO}, #{item.LECT_YMD}, #{item.CRCLM_CYCL}, #{item.ATTEND_STATUS}, #{item.CRCLM_CD}, #{item.SBJCT_NO}, '2')
+        </foreach>
+    </insert>
+
+
+
+
+
+
+</mapper>

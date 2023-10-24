@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pandora.lms.dao.AdminDAO">
+
+	<select id="applList" parameterType="com.pandora.lms.dto.ApplCrclmWrapperDTO" resultType="com.pandora.lms.dto.ApplCrclmWrapperDTO">
+		SELECT a.*, c.CRCLM_NM
+		FROM APPL_INFO AS a 
+		JOIN CRCLM_INFO AS c
+		ON a.CRCLM_CD = c.CRCLM_CD
+		<where>
+			<if test="KORN_FLNM != ''">
+				a.KORN_FLNM LIKE CONCAT('%',#{KORN_FLNM},'%')
+			</if>
+			<if test="ACADEMIC_STATUS != ''">
+				<choose>
+					<when test="ACADEMIC_STATUS == '재학'">AND a.CRCLM_CYCL is not Null</when>
+					<when test="ACADEMIC_STATUS == '휴학'">AND a.CRCLM_CYCL is Null</when>
+				</choose>
+			</if>
+			<if test="CRCLM_CD != ''">
+				AND a.CRCLM_CD = #{CRCLM_CD}
+			</if>
+			<if test="CRCLM_NM != ''">
+				AND c.CRCLM_NM LIKE CONCAT('%',#{CRCLM_NM},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="crcList" parameterType="com.pandora.lms.dto.CrclmInfoDTO" resultType="Integer">
+		SELECT CRCLM_CD
+		FROM CRCLM_INFO
+		<where>
+			<if test="CRCLM_NM != ''">
+				CRCLM_NM LIKE CONCAT('%',#{CRCLM_NM},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="onlectList" parameterType="HashMap" resultType="HashMap">
+		SELECT *
+		FROM lectureview
+		WHERE ON_LECT_NM LIKE CONCAT('%', IFNULL(#{ON_LECT_NM}, ''), '%')
+		  AND KORN_FLNM LIKE CONCAT('%', IFNULL(#{ON_INSTR_NM}, ''), '%')
+		  AND SBJCT_NM LIKE CONCAT('%', IFNULL(#{ON_SBJECT_NM}, ''), '%')
+		  AND CRCLM_NM LIKE CONCAT('%', IFNULL(#{department_name}, ''), '%')
+	</select>
+	
+<!-- 	<insert id="insertYoutube"> -->
+<!-- 		INSERT INTO  -->
+<!-- 	</insert> -->
+	<select id="studentsModal" parameterType="com.pandora.lms.dto.ApplInfoDTO" resultType="com.pandora.lms.dto.ApplInfoDTO">
+		SELECT *
+		FROM APPL_INFO
+		<where>
+			<if test="KORN_FLNM != null">
+				KORN_FLNM LIKE CONCAT('%',#{KORN_FLNM},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="departmentModal" parameterType="com.pandora.lms.dto.CrclmInfoDTO" resultType="com.pandora.lms.dto.CrclmInfoDTO">
+		SELECT *
+		FROM CRCLM_INFO
+		<where>
+			<if test="CRCLM_NM != null">
+				CRCLM_NM LIKE CONCAT('%',#{CRCLM_NM},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="instructorModal" parameterType="com.pandora.lms.dto.InstrInfoDTO" resultType="com.pandora.lms.dto.InstrInfoDTO">
+		SELECT *
+		FROM INSTR_INFO
+		<where>
+			<if test="KORN_FLNM != null">
+				KORN_FLNM LIKE CONCAT('%',#{KORN_FLNM},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="attendaceCnt" parameterType="com.pandora.lms.dto.AttendanceDTO" resultType="Integer">
+		SELECT COUNT(APPL_NO)
+		FROM APPL_ATND
+	</select>
+	
+	<select id="attendanceList" parameterType="com.pandora.lms.dto.AttendanceDTO" resultType="com.pandora.lms.dto.AttendanceDTO">
+		SELECT c.*, i.*
+		FROM APPL_ATND AS a
+		JOIN CRCLM_INFO AS c ON a.CRCLM_CD = c.CRCLM_CD
+		JOIN instr_subject_info AS i ON a.CRCLM_CD = i.CRCLM_CD
+		GROUP BY a.APPL_NO
+		<where>
+<!-- 			<if test="LECT_YMD != 0"> -->
+<!-- 				YEAR(a.LECT_YMD) = #{LECT_YMD} -->
+<!-- 			</if> -->
+			<if test="APPL_NO != 0">
+				AND a.APPL_NO = #{APPL_NO}
+			</if>
+			<if test="CRCLM_CYCL != 0">
+				AND a.CRCLM_CYCL = #{CRCLM_CYCL}
+			</if>
+			<if test="CRCLM_NM != null">
+				AND i.CRCLM_NM LIKE CONCAT('%',#{CRCLM_NM},'%')
+			</if>
+		</where>
+	</select>
+</mapper>

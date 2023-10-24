@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pandora.lms.dao.CheckDAO">
+	
+	<select id="AjaxStudent" parameterType="HashMap" resultType="HashMap">
+    	SELECT * from USER_APPL_VIEW
+    	WHERE USER_NO = #{studentNum} 
+    	<if test="Search01 != null">
+    		AND CRCLM_CYCL LIKE CONCAT('%', #{Search01}, '%')
+    	</if>
+    	<if test="departmentName != null">
+       	 	AND CRCLM_NM LIKE CONCAT('%', #{departmentName }, '%')
+    	</if>
+	</select>
+	
+	<select id="AjaxInstrSearch" parameterType="HashMap" resultType="HashMap">
+    	SELECT * from instr_subject_info
+    	WHERE KORN_FLNM LIKE CONCAT('%', #{instrName }, '%')
+    	<if test="departmentName != null">
+       	 	AND CRCLM_NM LIKE CONCAT('%', #{departmentName }, '%')
+    	</if>
+	</select>
+	
+	<update id="ChangeInstr" parameterType="Integer">
+		UPDATE INSTR_INFO
+		SET ZOOM_AUTH = CASE
+    		WHEN ZOOM_AUTH = 0 THEN 1
+    		ELSE 0
+		END
+		WHERE INSTR_NO = #{instrNo};
+	</update>
+	
+	
+	
+</mapper>

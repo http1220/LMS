@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="youtube">
+
+    <select id="lecture" resultType="HashMap">
+        <choose>
+            <when test="appl_no != null">
+                SELECT
+                    ac.SBJCT_NO,
+                    es.SBJCT_NM,
+                    ci.CRCLM_NM,
+                    (SELECT ii.KORN_FLNM  FROM INSTR_INFO ii WHERE ii.INSTR_NO = si.INSTR_NO) as 'KORN_FLNM',
+                    (SELECT COUNT(LECT_YMD) FROM LECT_TM_INFO lti WHERE lti.SBJCT_NO = ac.SBJCT_NO) as 'TOTAL_LECT_CNT',
+                    COUNT(aa.LECT_YMD) as 'APPL_ATND_CNT'
+                FROM APPL_CLS ac
+                    LEFT JOIN ESTBL_SBJCT es ON ac.SBJCT_NO = es.SBJCT_NO
+                    LEFT JOIN CRCLM_INFO ci ON ac.CRCLM_CD = ci.CRCLM_CD
+                    LEFT JOIN SBJCT_INSTR si ON ac.SBJCT_NO = si.SBJCT_NO
+                    LEFT JOIN APPL_ATND aa ON ac.SBJCT_NO = aa.SBJCT_NO AND aa.APPL_NO = #{appl_no }
+                WHERE
+                    ac.APPL_NO = #{appl_no }
+                GROUP BY ac.SBJCT_NO
+                ORDER BY ac.SBJCT_NO
+            </when>
+            <when test="instr_no != null">
+                SELECT
+                    si.SBJCT_NO,
+                    es.SBJCT_NM,
+                    ci.CRCLM_NM,
+                    (SELECT ii.KORN_FLNM  FROM INSTR_INFO ii WHERE ii.INSTR_NO = si.INSTR_NO) as 'KORN_FLNM'
+                FROM SBJCT_INSTR si
+                    LEFT JOIN ESTBL_SBJCT es ON si.SBJCT_NO = es.SBJCT_NO
+                    LEFT JOIN CRCLM_INFO ci ON si.CRCLM_CD = ci.CRCLM_CD
+                    LEFT JOIN APPL_ATND aa ON si.SBJCT_NO = aa.SBJCT_NO
+                WHERE
+                    si.INSTR_NO = #{instr_no }
+                GROUP BY si.SBJCT_NO
+                ORDER BY si.SBJCT_NO
+            </when>
+        </choose>
+    </select>
+
+    <select id="notice" parameterType="HashMap" resultType="HashMap">
+        SELECT notice_no, notice_title, admin_id, if((date_format(now(), '%Y-%m-%d') = date_format(notice_date, '%Y-%m-%d')), date_format(notice_date, '%H:%i'), date_format(notice_date, '%m-%d')) AS `notice_date`, notice_like, notice_read
+            FROM NOTICE
+                WHERE
+                    category = #{sbjct_no } + 1
+        ORDER BY notice_no DESC
+        LIMIT 0, 5
+    </select>
+
+    <insert id="noticeWrite" parameterType="HashMap">
+        INSERT INTO NOTICE(admin_id, notice_title, notice_content, category)
+        VALUES( (SELECT KORN_FLNM FROM INSTR_INFO WHERE INSTR_NO = #{instr_no}) , #{notice_title}, #{notice_content}, #{category})
+    </insert>
+
+    <select id="lectureNoticeDetail" parameterType="HashMap" resultType="HashMap">
+        SELECT notice_no, admin_id, notice_title, if((date_format(now(), '%Y-%m-%d') = date_format(notice_date, '%Y-%m-%d')), date_format(notice_date, '%H:%i'), date_format(notice_date, '%m-%d')) AS `notice_date`, notice_like, notice_read, notice_content
+            FROM NOTICE
+        WHERE notice_no = #{notice_no }
+    </select>
+
+    <select id="getApplList" parameterType="Integer" resultType="String">
+        SELECT ai.KORN_FLNM
+            FROM LECT_TM_INFO lti
+                JOIN APPL_CLS ac ON lti.SBJCT_NO = ac.SBJCT_NO
+                LEFT JOIN APPL_ATND aa ON lti.LECT_YMD = aa.LECT_YMD AND lti.SBJCT_NO = aa.SBJCT_NO AND ac.APPL_NO = aa.APPL_NO
+                JOIN APPL_INFO ai ON ac.APPL_NO = ai.APPL_NO
+                JOIN ESTBL_SBJCT es ON lti.SBJCT_NO = es.SBJCT_NO
+        WHERE
+            lti.SBJCT_NO = #{sbjct_no }
+        GROUP BY ac.APPL_NO
+        ORDER BY ac.APPL_NO
+    </select>
+
+    <select id="getClsCdCount" parameterType="HashMap" resultType="Integer">
+        SELECT COUNT(SBJCT_NO)
+            FROM LECT_TM_INFO
+                WHERE SBJCT_NO = #{sbjct_no }
+    </select>
+
+    <select id="getApplClsCount" parameterType="HashMap" resultType="Integer">
+        SELECT COUNT(APPL_NO)
+        FROM APPL_CLS
+        WHERE SBJCT_NO = #{sbjct_no }
+    </select>
+
+    <select id="getATND" parameterType="Integer" resultType="HashMap">
+        SELECT DATE_FORMAT(lti.LECT_YMD, '%Y-%m-%d') as LECT_YMD, es.SBJCT_NM, ai.KORN_FLNM, IF(aa.ATND_CD is null, '결석', '출석') as ATND, lti.BGNG_CLS_CD, lti.END_CLS_CD
+            FROM LECT_TM_INFO lti
+                JOIN APPL_CLS ac ON lti.SBJCT_NO = ac.SBJCT_NO
+                LEFT JOIN APPL_ATND aa ON lti.LECT_YMD = aa.LECT_YMD AND lti.SBJCT_NO = aa.SBJCT_NO AND ac.APPL_NO = aa.APPL_NO
+                JOIN APPL_INFO ai ON ac.APPL_NO = ai.APPL_NO
+                JOIN ESTBL_SBJCT es ON lti.SBJCT_NO = es.SBJCT_NO
+            WHERE
+                lti.SBJCT_NO = #{sbjct_no }
+        GROUP BY aa.ATND_CD, lti.LECT_YMD, ac.APPL_NO
+        ORDER BY ac.APPL_NO, lti.LECT_YMD
+    </select>
+
+    <select id="lectList" parameterType="HashMap" resultType="HashMap">
+        SELECT
+            es.SBJCT_NM as 'SBJCT_NM',
+            IFNULL(om.APPL_NO, lmm.APPL_NO) as 'APPL_NO',
+            lti.LECT_YMD AS 'LECT_YMD',
+            lti.SBJCT_MTHD_CD AS 'SBJCT_MTHD_CD',
+            lti.BGNG_CLS_CD AS 'BGNG_CLS_CD',
+            lti.END_CLS_CD AS 'END_CLS_CD',
+            IFNULL(oli.ON_LECT_NM, 'ZOOM 수업') AS 'ON_LECT_NM',
+            IFNULL(oli.ON_LECT_SN, lmi.MEET_ID) AS 'ON_LECT_SN',
+            IFNULL(oli.ON_LECT_URL, lmi.JOIN_URL) AS 'LECT_URL',
+            IFNULL(om.LECT_PRGRS_RT, 0) AS 'LECT_PRGRS_RT',
+            IFNULL(lmm.ATTEND_STATUS, '결석') AS 'ATTENDANCE',
+            fi.FILE_SN as 'FILE_SN',
+            GROUP_CONCAT(fi.FILE_SN_SEQ ORDER BY fi.FILE_SN_SEQ SEPARATOR ',') AS 'FILE_SN_SEQ',
+            GROUP_CONCAT(fi.PHYS_FILE_NM  ORDER BY fi.FILE_SN_SEQ  SEPARATOR ',') AS 'PHYS_FILE_NM',
+            GROUP_CONCAT(fi.ORGNL_FILE_NM  ORDER BY fi.FILE_SN_SEQ  SEPARATOR ',') AS 'ORGNL_FILE_NM',
+            GROUP_CONCAT(fi.FILE_EXTN_NM  ORDER BY fi.FILE_SN_SEQ  SEPARATOR ',') AS 'FILE_EXTN_NM',
+            GROUP_CONCAT(fi.FILE_PATH_NM  ORDER BY fi.FILE_SN_SEQ  SEPARATOR ',') AS 'FILE_PATH_NM',
+            GROUP_CONCAT(fi.FILE_SZ ORDER BY fi.FILE_SN_SEQ  SEPARATOR ',') AS 'FILE_SZ'
+        FROM LECT_TM_INFO lti
+            LEFT JOIN ON_LECT_INFO oli ON lti.LECT_YMD = oli.LECT_YMD
+            LEFT JOIN LECT_MEET_INFO lmi ON lti.LECT_YMD = lmi.LECT_YMD
+            LEFT JOIN ON_LECT_MAG om ON lti.SBJCT_NO = om.SBJCT_NO AND lti.LECT_YMD = om.LECT_YMD AND om.APPL_NO = #{appl_no}
+            LEFT JOIN LECT_MEET_MAG lmm ON lti.LECT_YMD = lmm.LECT_YMD AND lmm.APPL_NO = #{appl_no}
+            LEFT JOIN ESTBL_SBJCT es ON es.SBJCT_NO = #{sbjct_no}
+            LEFT JOIN FILE_INFO fi ON fi.FILE_SN = oli.LECT_FILE_SN
+        WHERE
+            lti.SBJCT_NO = #{sbjct_no}
+        GROUP BY
+            lti.LECT_YMD
+        ORDER BY lti.LECT_YMD ASC
+    </select>
+
+    <select id="getFileInfo" parameterType="HashMap" resultType="HashMap">
+        SELECT *
+            FROM FILE_INFO
+                WHERE
+                    FILE_SN = #{file_sn}
+                AND
+                    FILE_SN_SEQ = #{file_sn_seq}
+    </select>
+
+    <select id="lectDetail" parameterType="HashMap" resultType="HashMap">
+        SELECT
+            oli.ON_LECT_SN,
+            oli.ON_LECT_URL,
+            oli.SBJCT_NO
+            <choose>
+            <when test="appl_no != null">,
+            lti.BGNG_CLS_CD,
+            lti.END_CLS_CD,
+            olm.APPL_NO,
+            olm.LAST_PLAY_TM,
+            olm.LECT_MAX_TM,
+            olm.LECT_PRGRS_RT
+        FROM ON_LECT_MAG olm
+            JOIN ON_LECT_INFO oli ON olm.ON_LECT_SN = oli.ON_LECT_SN AND olm.APPL_NO = #{appl_no }
+            JOIN LECT_TM_INFO lti ON olm.LECT_YMD = lti.LECT_YMD
+            </when>
+            <otherwise>
+        FROM ON_LECT_INFO oli
+            </otherwise>
+            </choose>
+        WHERE
+            oli.ON_LECT_SN = #{on_lect_sn }
+    </select>
+
+    <select id="getClsCd" parameterType="HashMap" resultType="HashMap">
+        SELECT BGNG_CLS_CD , END_CLS_CD
+            FROM LECT_TM_INFO lti
+                JOIN  ON_LECT_MAG olm ON lti.LECT_YMD = olm.LECT_YMD
+            WHERE
+                olm.ON_LECT_SN = #{on_lect_sn }
+            AND
+                appl_no = #{appl_no }
+    </select>
+    
+    <select id="getPlayTime" parameterType="HashMap" resultType="Integer">
+        SELECT
+            LAST_PLAY_TM
+        FROM ON_LECT_MAG
+        WHERE
+            ON_LECT_SN = #{on_lect_sn }
+        AND
+            APPL_NO = #{appl_no }
+    </select>
+
+    <update id="playTimeSave" parameterType="HashMap">
+        UPDATE ON_LECT_MAG
+        SET
+            LAST_PLAY_TM = #{curr_time }
+        WHERE
+            ON_LECT_SN = #{on_lect_sn }
+        AND
+            APPL_NO = #{appl_no }
+    </update>
+
+    <select id="getLectInfo" parameterType="HashMap" resultType="HashMap">
+        SELECT
+            olm.APPL_NO as 'appl_no',
+            lti.CRCLM_CD as 'crclm_cd',
+            lti.CRCLM_CYCL as 'crclm_cycl',
+            lti.LECT_YMD as 'lect_ymd',
+            lti.SBJCT_NO as 'sbjct_no',
+            lti.SBJCT_MTHD_CD as 'sbjct_mthd_cd'
+        FROM ON_LECT_MAG olm
+            LEFT JOIN LECT_TM_INFO lti ON olm.LECT_YMD = lti.LECT_YMD
+        WHERE
+            olm.APPL_NO = #{appl_no }
+        AND
+            olm.SBJCT_NO = #{sbjct_no }
+        AND
+            olm.ON_LECT_SN = #{on_lect_sn }
+        AND
+            olm.LECT_PRGRS_RT >= 90;
+    </select>
+
+    <insert id="applATNDInsert" parameterType="HashMap">
+        INSERT INTO APPL_ATND
+            SET
+                APPL_NO = #{appl_no },
+                SBJCT_NO = #{sbjct_no },
+                LECT_YMD = #{lect_ymd },
+                CRCLM_CYCL = #{crclm_cycl },
+                CRCLM_CD = #{crclm_cd },
+                SBJCT_MTHD_CD = #{sbjct_mthd_cd },
+                ATND_CD = 1
+    </insert>
+
+    <select id="getFileSnSeq" parameterType="HashMap" resultType="Integer">
+        SELECT MAX(FILE_SN_SEQ)
+            FROM FILE_INFO
+                WHERE
+                    FILE_SN = #{on_lect_sn }
+    </select>
+
+    <insert id="insertFileInfo" parameterType="HashMap">
+        INSERT INTO FILE_INFO
+            SET
+                FILE_SN = #{FILE_SN },
+                FILE_SN_SEQ = #{FILE_SN_SEQ },
+                PHYS_FILE_NM = #{PHYS_FILE_NM },
+                ORGNL_FILE_NM = #{ORGNL_FILE_NM },
+                FILE_PATH_NM = #{FILE_PATH_NM },
+                FILE_EXTN_NM = #{FILE_EXTN_NM },
+                FILE_SZ = #{FILE_SZ }
+    </insert>
+    
+    <insert id="insertNewYOUtubeLecture" parameterType="HashMap">
+    INSERT into `ON_LECT_INFO` (`LECT_YMD`  , `SBJCT_NO` ,`CRCLM_CD` , `CRCLM_CYCL` , `ON_LECT_NM` ,  `ON_LECT_CN` , `ON_LECT_URL`)
+VALUES ("2023-04-28 14:57:11" , #{SBJCT_NO} , #{CRCLM_CD} , 202301 , #{ON_LECT_NM} , #{ON_LECT_CN} , #{ON_LECT_URL} );
+    </insert>
+
+</mapper>

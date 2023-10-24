@@ -1,0 +1,14 @@
+.logo_space{
+    float: left;
+}
+.logo_small_text{
+    float: left;
+    margin-top: 7px;
+    margin-left: 40px;
+}
+.logo_big_text{
+    margin-left: -35px;
+}
+.logo_img{
+    margin-left: 0px;
+}

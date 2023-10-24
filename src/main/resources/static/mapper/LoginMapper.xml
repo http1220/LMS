@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pandora.lms.dao.LoginDAO">
+
+    <select id="login" parameterType="LoginDTO" resultType="LoginDTO">
+        SELECT USER_NO, USER_ID, PSWD, KORN_FLNM, USER_GROUP_CD
+        FROM USER_INFO
+            WHERE
+               USER_ID = #{ USER_ID }
+
+    </select>
+
+    <select id="instrNo" parameterType="Integer" resultType="String">
+        SELECT INSTR_NO FROM INSTR_INFO WHERE USER_NO = #{ userNo }
+    </select>
+
+    <select id="applNo" parameterType="Integer" resultType="String">
+        SELECT APPL_NO FROM APPL_INFO WHERE USER_NO = #{ userNo }
+    </select>
+	
+	<select id="findByUsername" parameterType="String" resultType="UserInfoDto">
+        SELECT *
+        FROM USER_INFO
+        WHERE USER_ID = #{ username }
+    </select>
+    
+    <select id="findByAdminname" parameterType="String" resultType="AdmininfoDto">
+        SELECT *
+        FROM ADMIN_INFO
+        WHERE ADMIN_ID = #{ username }
+    </select>
+    
+    <select id="getAPPL" parameterType="Integer" resultType="Integer">
+        SELECT APPL_NO
+        FROM APPL_INFO
+        WHERE USER_NO = #{ userNo }
+    </select>
+    
+    <select id="getINSTR" parameterType="Integer" resultType="Integer">
+        SELECT INSTR_NO
+        FROM INSTR_INFO
+        WHERE USER_NO = #{ userNo }
+    </select>
+    
+     <insert id="save" parameterType="UserInfoDto">
+        INSERT INTO USER_INFO (
+            USER_ID, PSWD, KORN_FLNM, USER_BRDT,
+            EML_ADDR, TELNO, PSWD_CHG_YN, PSWD_CHG_DT,
+            PSWD_ERR_NMTM, USER_GROUP_CD
+        )
+        VALUES (
+            #{USER_ID}, #{PSWD}, #{KORN_FLNM}, #{USER_BRDT},
+            #{EML_ADDR}, #{TELNO}, #{PSWD_CHG_YN}, #{PSWD_CHG_DT},
+            #{PSWD_ERR_NMTM}, #{USER_GROUP_CD}
+        )
+    </insert>
+    
+    <select id="checkEamil" parameterType="String" resultType="String">
+    	SELECT EML_ADDR FROM USER_INFO WHERE USER_ID = #{id}
+    </select>
+    
+    <update id="tempkeysave" parameterType="UserInfoDto">
+    	UPDATE USER_INFO
+		SET PSWD_ERR_NMTM = #{PSWD_ERR_NMTM}
+		WHERE USER_ID = #{USER_ID} and EML_ADDR = #{EML_ADDR}
+    </update>
+    
+    <select id="compareNum" parameterType="UserInfoDto" resultType="Integer">
+    	SELECT COUNT(*)
+    	FROM USER_INFO
+    	WHERE USER_ID = #{USER_ID} and PSWD_ERR_NMTM = #{PSWD_ERR_NMTM}
+    </select>
+    
+    <update id="rewritepw" parameterType="UserInfoDto">
+    	UPDATE USER_INFO
+		SET PSWD = #{PSWD}
+		WHERE PSWD_ERR_NMTM = #{PSWD_ERR_NMTM}
+    </update>
+
+</mapper>

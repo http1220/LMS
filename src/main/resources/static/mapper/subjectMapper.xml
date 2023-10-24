@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pandora.lms.dao.SubjectDAO">
+	
+	<select id="AjaxSubject" parameterType="HashMap" resultType="HashMap">
+    SELECT * 
+    FROM subject_view
+    WHERE CRCLM_CYCL LIKE CONCAT('%', #{Search01}, '%')
+    	<if test="subjectName != null">
+       	 	AND SBJCT_NM LIKE CONCAT('%', #{subjectName }, '%')
+    	</if>
+    	<if test="departmentName != null">
+       	 	AND CRCLM_NM LIKE CONCAT('%', #{departmentName }, '%')
+    	</if>
+	</select>
+	
+	
+	
+	
+	
+	
+</mapper>

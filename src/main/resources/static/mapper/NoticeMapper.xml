@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.pandora.lms.dao.NoticeDAO">
+
+    <select id="noticeCount" parameterType="HashMap" resultType="Integer">
+        SELECT COUNT(*) FROM noticeview
+        <if test="searchType != null">
+            WHERE
+            <choose>
+                <when test="searchType == 'title'">notice_title</when>
+                <when test="searchType == 'writer'">admin_id</when>
+            </choose>
+            LIKE CONCAT('%', #{searchValue }, '%')
+        </if>
+    </select>
+
+    <select id="noticeList"  parameterType="Integer"  resultType="HashMap">
+        SELECT notice_no,notice_title,admin_id,notice_date,notice_like,notice_read,rowNum
+        FROM noticeview
+        <if test="searchType != null">
+            WHERE
+            <choose>
+                <when test="searchType == 'title'">notice_title</when>
+                <when test="searchType == 'writer'">admin_id</when>
+            </choose>
+            LIKE CONCAT('%', #{searchValue }, '%')
+        </if>
+        ORDER BY notice_no DESC
+        LIMIT #{startPage}, 10
+    </select>
+
+    <update id="noticeRead" parameterType="String">
+        UPDATE NOTICE SET notice_read = notice_read + 1 WHERE notice_no=${ notice_no }
+    </update>
+
+    <select id="noticeDetail" parameterType="String" resultType="HashMap">
+        SELECT notice_no,admin_id,notice_title,notice_date,notice_like,notice_read,notice_content,rowNum
+        FROM noticeview
+        WHERE notice_no = #{notice_no}
+    </select>
+
+    <insert id="noticeWrite" parameterType="HashMap">
+        INSERT INTO NOTICE(admin_id,notice_title, notice_content,category)
+        VALUES('ADMIN', #{notice_title}, #{notice_content},1)
+    </insert>
+
+    <update id="noticeUpdate" parameterType="HashMap">
+        UPDATE NOTICE SET notice_title= #{notice_title}, notice_content = #{notice_content}
+        WHERE notice_no = #{ notice_no }
+    </update>
+
+    <update id="noticeDelete" parameterType="String">
+        UPDATE NOTICE SET notice_del = 1 WHERE notice_no = #{ notice_no }
+    </update>
+
+    <select id="noticeNo" parameterType="String" resultType="Integer">
+        SELECT notice_no FROM noticeview WHERE rowNum= #{ rowNum }
+    </select>
+    <select id="mainNoticCnt" resultType="Integer">
+        SELECT COUNT(*) FROM noticeview
+    </select>
+    <select id="mainNoticeList" resultType="HashMap">
+        SELECT * FROM noticeview ORDER BY rowNum DESC LIMIT 5
+
+    </select>
+</mapper>
